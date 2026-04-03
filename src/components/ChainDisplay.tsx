@@ -20,9 +20,9 @@ export default function ChainDisplay({ slots, onSlotClick, onRemoveBlock, totalW
       </div>
 
       <div className="chain-wrapper">
-        <svg className="chain-svg" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet">
+        <svg className="chain-svg" viewBox="0 0 1200 264" preserveAspectRatio="xMidYMid meet">
           <path
-            d="M 57 50 H 171 H 285 H 400 H 514 H 628 H 742 V 100 H 57 V 150 H 171 H 285 H 400 H 514 H 628 H 742"
+            d="M 324 30 L 406 30 L 498 30 L 590 30 L 682 30 L 774 30 L 866 30 C 920 30, 920 162, 885 162 L 793 162 L 701 162 L 609 162 L 517 162 L 425 162 L 967 162"
             className="gold-line"
           />
         </svg>

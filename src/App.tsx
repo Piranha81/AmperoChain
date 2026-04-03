@@ -13,7 +13,10 @@ export default function App() {
   const [slots, setSlots] = useState<(string | null)[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === 12) return parsed;
+      }
     } catch (e) {}
     return createInitialSlots();
   });
