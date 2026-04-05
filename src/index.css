@@ -5,7 +5,7 @@
   --neon-cyan: #00ffff;
   --neon-magenta: #ff00ff;
   --neon-amber: #ffaa00;
-  --gold-line: #8b5e3c;
+  --gold-line: #8f6547;
   --text-primary: #ffffff;
   --text-secondary: #a0a0a0;
   --border-color: #333345;
@@ -177,7 +177,7 @@ body {
 .gold-line {
   fill: none;
   stroke: var(--gold-line);
-  stroke-width: 3;
+  stroke-width: 4;
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 2px rgba(139, 94, 60, 0.4));
