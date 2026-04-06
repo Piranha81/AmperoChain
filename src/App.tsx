@@ -68,6 +68,10 @@ export default function App() {
     URL.revokeObjectURL(url);
   }, [slots]);
 
+  const handleClearChain = useCallback(() => {
+    setSlots(createInitialSlots());
+  }, []);
+
   const handleImport = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -97,32 +101,35 @@ export default function App() {
       <header className="header">
         <h1>Audio Chain Editor</h1>
         <div className="controls">
+          <button className="btn btn-clear" onClick={handleClearChain}>Clear Chain</button>
           <button className="btn" onClick={handleExport}>Export</button>
           <button className="btn" onClick={handleImport}>Import</button>
           <div className="total-weight">Total CPU: {totalComputeWeight}%</div>
         </div>
       </header>
       
-      <div className="upper-half">
-        <ChainDisplay
-          slots={slots}
-          onSlotClick={handleSlotClick}
-          onRemoveBlock={handleRemoveBlock}
-          totalWeight={totalComputeWeight}
-        />
-      </div>
-      
-      <div className="lower-half">
-        {pickerSlot !== null ? (
-          <BlockPicker
-            position={pickerSlot}
-            slots={slots}
-            onSelect={handleSelectBlock}
-            onClose={() => setPickerSlot(null)}
-          />
-        ) : (
-          <div className="picker-placeholder">Click a "+" slot to add a module</div>
+      <div className="main-layout">
+        {pickerSlot !== null && (
+          <div className={`sidebar-overlay ${pickerSlot !== null ? 'visible' : ''}`} onClick={() => setPickerSlot(null)} />
         )}
+        <div className={`sidebar ${pickerSlot !== null ? 'open' : ''}`}>
+          {pickerSlot !== null ? (
+            <BlockPicker
+              position={pickerSlot}
+              slots={slots}
+              onSelect={handleSelectBlock}
+              onClose={() => setPickerSlot(null)}
+            />
+          ) : null}
+        </div>
+        <div className="upper-half">
+          <ChainDisplay
+            slots={slots}
+            onSlotClick={handleSlotClick}
+            onRemoveBlock={handleRemoveBlock}
+            totalWeight={totalComputeWeight}
+          />
+        </div>
       </div>
     </div>
   );

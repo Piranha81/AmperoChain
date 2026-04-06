@@ -1,5 +1,7 @@
+import { useRef, useEffect } from 'react';
 import { SLOTS_PER_ROW } from '../types/audio';
 import { getBlockById } from '../data/blocks';
+import { getColorForCategory, getIconForCategory } from '../data/icons';
 
 interface ChainDisplayProps {
   slots: (string | null)[];
@@ -62,22 +64,46 @@ function SlotBlock({ slot, position, onClick, onRemove }: {
   onRemove: (pos: number) => void;
 }) {
   const blockData = slot ? getBlockById(slot) : null;
+  const color = blockData ? getColorForCategory(blockData.category) : undefined;
+  const icon = blockData ? getIconForCategory(blockData.category) : undefined;
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (clickTimer.current) clearTimeout(clickTimer.current);
+    };
+  }, []);
+
+  const handleClick = () => {
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+    clickTimer.current = setTimeout(() => {
+      onClick(position);
+      clickTimer.current = null;
+    }, 250);
+  };
+
+  const handleDoubleClick = () => {
+    if (clickTimer.current) {
+      clearTimeout(clickTimer.current);
+      clickTimer.current = null;
+    }
+    if (slot) onRemove(position);
+  };
 
   return (
     <div
       className={`slot ${slot ? 'filled' : 'empty'}`}
-      onClick={() => !slot ? onClick(position) : undefined}
-      onDoubleClick={() => slot ? onRemove(position) : undefined}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       style={blockData ? {
-        borderColor: blockData.color,
-        background: '#12121a',
-        boxShadow: `0 0 10px ${blockData.color}33`,
+        borderColor: color,
+        boxShadow: `0 0 10px ${color}33`,
       } : undefined}
     >
       {slot && blockData ? (
         <div className="block-node-content">
-          <span className="block-icon">{blockData?.icon}</span>
-          <span className="block-name">{blockData?.name}</span>
+          <span className="block-name" style={{ color }}>{blockData?.name}</span>
+          {icon && <img className="block-icon-img" src={icon} alt="" />}
           <span className="block-weight">{blockData?.computeWeight}%</span>
         </div>
       ) : (

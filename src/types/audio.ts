@@ -2,8 +2,6 @@ export interface AudioBlock {
   id: string;
   name: string;
   type: string;
-  icon: string;
-  color: string;
   computeWeight: number;
   category: string;
   subcategory: string;

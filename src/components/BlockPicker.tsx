@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { blockLibrary } from '../data/blocks';
+import { getColorForCategory, getIconForCategory } from '../data/icons';
 import type { AudioBlock } from '../types/audio';
 
 interface BlockPickerProps {
@@ -20,10 +21,7 @@ export default function BlockPicker({ position, slots, onSelect, onClose }: Bloc
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [expandedSub, setExpandedSub] = useState<string | null>(null);
 
-  const usedIds = new Set(slots.filter((s): s is string => s !== null));
-
   const availableBlocks = blockLibrary.filter(block =>
-    !usedIds.has(block.id) &&
     block.type !== 'input' &&
     block.type !== 'output'
   );
@@ -35,8 +33,8 @@ export default function BlockPicker({ position, slots, onSelect, onClose }: Bloc
     if (!categoryMap.has(block.category)) {
       const cat: CategoryGroup = {
         category: block.category,
-        color: block.color,
-        icon: block.icon,
+        color: getColorForCategory(block.category),
+        icon: getIconForCategory(block.category),
         subcategories: [],
       };
       categoryMap.set(block.category, cat);
@@ -80,7 +78,7 @@ export default function BlockPicker({ position, slots, onSelect, onClose }: Bloc
               style={{ borderColor: cat.color }}
               onClick={() => toggleCategory(cat.category)}
             >
-              <span className="category-icon">{cat.icon}</span>
+              <img className="category-icon-img" src={cat.icon} alt="" />
               <span className="category-name">{cat.category}</span>
               <span className="category-count">{cat.subcategories.reduce((a, s) => a + s.effects.length, 0)}</span>
               <span className={`category-arrow ${expandedCategory === cat.category ? 'open' : ''}`}>▾</span>
@@ -107,7 +105,7 @@ export default function BlockPicker({ position, slots, onSelect, onClose }: Bloc
                         <div
                           key={effect.id}
                           className="effect-item"
-                          style={{ borderLeftColor: effect.color }}
+                          style={{ borderLeftColor: getColorForCategory(effect.category) }}
                           onClick={() => handleSelect(effect.id)}
                           title={effect.description}
                         >
