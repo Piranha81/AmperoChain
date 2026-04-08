@@ -4,13 +4,14 @@ import { getBlockById } from '../data/blocks';
 import { getColorForCategory, getIconForCategory } from '../data/icons';
 
 interface ChainDisplayProps {
+  onDrop: (source: number, target: number) => void;
   slots: (string | null)[];
   onSlotClick: (position: number) => void;
   onRemoveBlock: (position: number) => void;
   totalWeight: number;
 }
 
-export default function ChainDisplay({ slots, onSlotClick, onRemoveBlock, totalWeight }: ChainDisplayProps) {
+export default function ChainDisplay({ slots, onSlotClick, onRemoveBlock, totalWeight, onDrop }: ChainDisplayProps) {
   const row1 = slots.slice(0, SLOTS_PER_ROW);
   const row2 = slots.slice(SLOTS_PER_ROW);
 
@@ -42,13 +43,13 @@ export default function ChainDisplay({ slots, onSlotClick, onRemoveBlock, totalW
           <div className="chain-row">
             <div className="hex-block hex-in">IN</div>
             {row1.map((slot, i) => (
-              <SlotBlock key={i} slot={slot} position={i} onClick={onSlotClick} onRemove={onRemoveBlock} />
+              <SlotBlock key={i} slot={slot} position={i} onClick={onSlotClick} onRemove={onRemoveBlock} onDrop={onDrop} />
             ))}
           </div>
           <div className="chain-row">
-            {row2.map((slot, i) => (
-              <SlotBlock key={i + SLOTS_PER_ROW} slot={slot} position={i + SLOTS_PER_ROW} onClick={onSlotClick} onRemove={onRemoveBlock} />
-            ))}
+{row2.map((slot, i) => (
+            <SlotBlock key={i + SLOTS_PER_ROW} slot={slot} position={i + SLOTS_PER_ROW} onClick={onSlotClick} onRemove={onRemoveBlock} onDrop={onDrop} />
+          ))}
             <div className="hex-block hex-out">OUT</div>
           </div>
         </div>
@@ -57,12 +58,13 @@ export default function ChainDisplay({ slots, onSlotClick, onRemoveBlock, totalW
   );
 }
 
-function SlotBlock({ slot, position, onClick, onRemove }: {
+function SlotBlock({ slot, position, onClick, onRemove, onDrop }: {
   slot: string | null;
   position: number;
   onClick: (pos: number) => void;
-  onRemove: (pos: number) => void;
-}) {
+    onRemove: (pos: number) => void;
+    onDrop: (source: number, target: number) => void;
+  }) {
   const blockData = slot ? getBlockById(slot) : null;
   const color = blockData ? getColorForCategory(blockData.category) : undefined;
   const icon = blockData ? getIconForCategory(blockData.category) : undefined;
@@ -93,6 +95,15 @@ function SlotBlock({ slot, position, onClick, onRemove }: {
   return (
     <div
       className={`slot ${slot ? 'filled' : 'empty'}`}
+      draggable={!!slot}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', position.toString());
+      }}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        const source = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (!isNaN(source)) onDrop(source, position);
+      }}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       style={blockData ? {

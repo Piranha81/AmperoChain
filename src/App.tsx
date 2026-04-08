@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getBlockById } from './data/blocks';
 import ChainDisplay from './components/ChainDisplay';
 import BlockPicker from './components/BlockPicker';
+import PopupIntro from './components/PopupIntro';
 
 const STORAGE_KEY = 'audio-chain-editor-state';
 
@@ -10,22 +11,19 @@ function createInitialSlots(): (string | null)[] {
 }
 
 export default function App() {
-  const [slots, setSlots] = useState<(string | null)[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length === 12) return parsed;
-      }
-    } catch (e) {}
-    return createInitialSlots();
-  });
+  // Reset the chain on every page load by starting from a fresh initial state
+  const [slots, setSlots] = useState<(string | null)[]>(() => createInitialSlots());
+
+  // Ensure no persisted chain between page loads
+  useEffect(() => {
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
 
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
+  // Show the introduction popup on every load (persisting state is unnecessary per requirements)
+  const [showIntro, setShowIntro] = useState<boolean>(true);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(slots));
-  }, [slots]);
+  // Intentionally avoid persisting chain state between page loads; resets on open.
 
   const handleSlotClick = useCallback((position: number) => {
     setPickerSlot(position);
@@ -41,6 +39,18 @@ export default function App() {
     setPickerSlot(null);
   }, [pickerSlot]);
 
+
+  const handleDrop = useCallback((source: number, target: number) => {
+    setSlots(prev => {
+      const updated = [...prev];
+      const moving = updated[source];
+      // swap positions
+      updated[source] = updated[target];
+      updated[target] = moving;
+      return updated;
+    });
+  }, []);
+
   const handleRemoveBlock = useCallback((position: number) => {
     setSlots(prev => {
       const updated = [...prev];
@@ -48,6 +58,7 @@ export default function App() {
       return updated;
     });
   }, []);
+
 
   const totalComputeWeight = slots.reduce((sum, slot) => {
     if (slot) {
@@ -98,8 +109,9 @@ export default function App() {
 
   return (
     <div className="app">
+      {showIntro && <PopupIntro onClose={() => setShowIntro(false)} />}
       <header className="header">
-        <h1>Audio Chain Editor</h1>
+        <h1>Ampero II chain tool</h1>
         <div className="controls">
           <button className="btn btn-clear" onClick={handleClearChain}>Clear Chain</button>
           <button className="btn" onClick={handleExport}>Export</button>
@@ -114,21 +126,21 @@ export default function App() {
         )}
         <div className={`sidebar ${pickerSlot !== null ? 'open' : ''}`}>
           {pickerSlot !== null ? (
-            <BlockPicker
-              position={pickerSlot}
-              slots={slots}
-              onSelect={handleSelectBlock}
-              onClose={() => setPickerSlot(null)}
-            />
+<BlockPicker
+               position={pickerSlot}
+               onSelect={handleSelectBlock}
+               onClose={() => setPickerSlot(null)}
+             />
           ) : null}
         </div>
         <div className="upper-half">
-          <ChainDisplay
-            slots={slots}
-            onSlotClick={handleSlotClick}
-            onRemoveBlock={handleRemoveBlock}
-            totalWeight={totalComputeWeight}
-          />
+<ChainDisplay
+              slots={slots}
+              onSlotClick={handleSlotClick}
+              onRemoveBlock={handleRemoveBlock}
+              totalWeight={totalComputeWeight}
+              onDrop={handleDrop}
+            />
         </div>
       </div>
     </div>

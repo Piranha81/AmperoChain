@@ -5,7 +5,7 @@ import type { AudioBlock } from '../types/audio';
 
 interface BlockPickerProps {
   position: number;
-  slots: (string | null)[];
+
   onSelect: (blockId: string) => void;
   onClose: () => void;
 }
@@ -17,7 +17,7 @@ interface CategoryGroup {
   subcategories: { name: string; effects: AudioBlock[] }[];
 }
 
-export default function BlockPicker({ position, slots, onSelect, onClose }: BlockPickerProps) {
+export default function BlockPicker({ position, onSelect, onClose }: BlockPickerProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [expandedSub, setExpandedSub] = useState<string | null>(null);
 
