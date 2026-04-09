@@ -248,7 +248,7 @@ body {
   justify-content: center;
   background: var(--bg-primary);
   min-height: 0;
-  padding: 20px;
+  padding: 20px 0;
   transition: margin-left 0.3s ease;
 }
 
@@ -256,7 +256,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
+  padding: 20px 0;
   width: 100%;
 }
 
@@ -265,12 +265,12 @@ body {
   border: 2px solid var(--neon-cyan);
   box-shadow: 0 0 8px var(--neon-cyan), 0 0 15px var(--neon-magenta);
   width: 100%;
-  max-width: 900px;
+  max-width: 700px;
   height: 24px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  margin-bottom: 20px;
+  margin: 0 0 40px 40px;
   position: relative;
   overflow: hidden;
 }
@@ -295,7 +295,7 @@ body {
 
 .chain-wrapper {
   position: relative;
-  width: 1200px;
+  width: 700px;
   height: 264px;
   margin: 0 auto;
 }
@@ -322,7 +322,7 @@ body {
 .chain-content {
   position: relative;
   z-index: 1;
-  width: 1200px;
+  width: 700px;
   margin: 0 auto;
   padding-right: 40px;
 }

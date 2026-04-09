@@ -23,7 +23,7 @@ export default function ChainDisplay({ slots, onSlotClick, onRemoveBlock, totalW
       </div>
 
       <div className="chain-wrapper">
-        <svg className="chain-svg" viewBox="0 0 1200 264" preserveAspectRatio="xMidYMid meet">
+        <svg className="chain-svg" viewBox="240 0 700 264" preserveAspectRatio="xMidYMid meet">
           <path
             d="
               M 300 44
@@ -36,7 +36,9 @@ export default function ChainDisplay({ slots, onSlotClick, onRemoveBlock, totalW
               V 182
               A 12 12 0 0 0 320 194
               H 950"
-            className="gold-line" fill="none" />
+            className="gold-line"
+            fill="none"
+          />
         </svg>
 
         <div className="chain-content">
@@ -76,7 +78,10 @@ function SlotBlock({ slot, position, onClick, onRemove, onDrop }: {
     };
   }, []);
 
-  const handleClick = () => {
+  // Mobile pointer‑drag support: store source slot while dragging
+let dragSource: number | null = null;
+
+const handleClick = () => {
     if (clickTimer.current) clearTimeout(clickTimer.current);
     clickTimer.current = setTimeout(() => {
       onClick(position);
@@ -95,15 +100,29 @@ function SlotBlock({ slot, position, onClick, onRemove, onDrop }: {
   return (
     <div
       className={`slot ${slot ? 'filled' : 'empty'}`}
-      draggable={!!slot}
-      onDragStart={(e) => {
-        e.dataTransfer.setData('text/plain', position.toString());
-      }}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => {
-        const source = parseInt(e.dataTransfer.getData('text/plain'), 10);
-        if (!isNaN(source)) onDrop(source, position);
-      }}
+draggable={!!slot}
+        // Use pointer events for mobile compatibility
+        onPointerDown={(e) => {
+          if (e.button !== 0) return; // only primary button / touch
+          dragSource = position;
+          // make the element semi‑transparent while dragging
+          (e.currentTarget as HTMLElement).style.opacity = '0.6';
+        }}
+        onPointerMove={(e) => {
+          if (dragSource === null) return;
+          e.preventDefault(); // prevent scrolling
+        }}
+        onPointerUp={(e) => {
+          if (dragSource === null) return;
+          const target = position;
+          onDrop(dragSource, target);
+          dragSource = null;
+          (e.currentTarget as HTMLElement).style.opacity = '';
+        }}
+        onPointerCancel={(e) => {
+          dragSource = null;
+          (e.currentTarget as HTMLElement).style.opacity = '';
+        }}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       style={blockData ? {
