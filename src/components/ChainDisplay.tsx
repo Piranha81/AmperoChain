@@ -152,8 +152,6 @@ const handlePointerDown = (e: React.PointerEvent) => {
         onDragStart={e => {
           if (!slot) return; // only drag filled slots
           e.dataTransfer.setData('text/plain', position.toString());
-          // visual hint – make semi‑transparent
-          (e.currentTarget as HTMLElement).style.opacity = '0.6';
         }}
         onDragOver={e => e.preventDefault()}
         onDrop={e => {
