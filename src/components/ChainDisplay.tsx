@@ -64,24 +64,42 @@ function SlotBlock({ slot, position, onClick, onRemove, onDrop }: {
   slot: string | null;
   position: number;
   onClick: (pos: number) => void;
-    onRemove: (pos: number) => void;
-    onDrop: (source: number, target: number) => void;
-  }) {
+  onRemove: (pos: number) => void;
+  onDrop: (source: number, target: number) => void;
+}) {
   const blockData = slot ? getBlockById(slot) : null;
   const color = blockData ? getColorForCategory(blockData.category) : undefined;
   const icon = blockData ? getIconForCategory(blockData.category) : undefined;
-  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Refs for timers and drag state
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragSource = useRef<number | null>(null);
+  const startPos = useRef<{ x: number; y: number } | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (clickTimer.current) clearTimeout(clickTimer.current);
     };
   }, []);
 
-  // Mobile pointer‑drag support: store source slot while dragging
-let dragSource: number | null = null;
+  // Global cleanup for pointerup/cancel (covers drags that leave the slot)
+  useEffect(() => {
+    const endDrag = () => {
+      dragSource.current = null;
+      startPos.current = null;
+      wrapperRef.current?.classList.remove('dragging');
+    };
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+    return () => {
+      window.removeEventListener('pointerup', endDrag);
+      window.removeEventListener('pointercancel', endDrag);
+    };
+  }, []);
 
-const handleClick = () => {
+  const handleClick = () => {
     if (clickTimer.current) clearTimeout(clickTimer.current);
     clickTimer.current = setTimeout(() => {
       onClick(position);
@@ -97,48 +115,80 @@ const handleClick = () => {
     if (slot) onRemove(position);
   };
 
-  return (
-    <div
-      className={`slot ${slot ? 'filled' : 'empty'}`}
-draggable={!!slot}
-        // Use pointer events for mobile compatibility
-        onPointerDown={(e) => {
+const handlePointerDown = (e: React.PointerEvent) => {
+          // Only prevent default for touch pointers to avoid canceling native mouse drag
+          if (e.pointerType === 'touch') {
+            e.preventDefault(); // stop native image drag / long‑press menu
+          }
           if (e.button !== 0) return; // only primary button / touch
-          dragSource = position;
-          // make the element semi‑transparent while dragging
+          dragSource.current = position;
+          startPos.current = { x: e.clientX, y: e.clientY };
+          wrapperRef.current?.classList.add('dragging');
+        };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (dragSource.current === null) return;
+    // Only prevent scrolling if the pointer has actually moved a bit
+    const dx = e.clientX - (startPos.current?.x ?? 0);
+    const dy = e.clientY - (startPos.current?.y ?? 0);
+    if (Math.hypot(dx, dy) > 5) e.preventDefault();
+  };
+
+  const handlePointerUp = () => {
+    if (dragSource.current === null) return;
+    const target = position;
+    onDrop(dragSource.current, target);
+    dragSource.current = null;
+    startPos.current = null;
+    wrapperRef.current?.classList.remove('dragging');
+  };
+
+  return (
+<div
+          className={`slot ${slot ? 'filled' : 'empty'}`}
+          draggable={!!slot} // desktop drag support
+          style={blockData ? { borderColor: color } : undefined}
+        onContextMenu={e => e.preventDefault()}
+        onDragStart={e => {
+          if (!slot) return; // only drag filled slots
+          e.dataTransfer.setData('text/plain', position.toString());
+          // visual hint – make semi‑transparent
           (e.currentTarget as HTMLElement).style.opacity = '0.6';
         }}
-        onPointerMove={(e) => {
-          if (dragSource === null) return;
-          e.preventDefault(); // prevent scrolling
+        onDragOver={e => e.preventDefault()}
+        onDrop={e => {
+          const source = parseInt(e.dataTransfer.getData('text/plain'), 10);
+          if (!isNaN(source)) onDrop(source, position);
         }}
-        onPointerUp={(e) => {
-          if (dragSource === null) return;
-          const target = position;
-          onDrop(dragSource, target);
-          dragSource = null;
+        onDragEnd={e => {
           (e.currentTarget as HTMLElement).style.opacity = '';
         }}
-        onPointerCancel={(e) => {
-          dragSource = null;
-          (e.currentTarget as HTMLElement).style.opacity = '';
-        }}
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
-      style={blockData ? {
-        borderColor: color,
-        boxShadow: `0 0 10px ${color}33`,
-      } : undefined}
-    >
-      {slot && blockData ? (
-        <div className="block-node-content">
-          <span className="block-name" style={{ color }}>{blockData?.name}</span>
-          {icon && <img className="block-icon-img" src={icon} alt="" />}
-          <span className="block-weight">{blockData?.computeWeight}%</span>
+      >
+      {/* Mobile‑only wrapper handling pointer events */}
+<div
+          ref={wrapperRef}
+          style={{ touchAction: 'none' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="mobile-drag-wrapper"
+        >
+        {/* Click / double‑click still work on the inner content */}
+        <div onClick={handleClick} onDoubleClick={handleDoubleClick}>
+          {slot && blockData ? (
+            <div className="block-node-content">
+              <span className="block-name" style={{ color }}>{blockData?.name}</span>
+              {icon && <img className="block-icon-img" src={icon} alt="" />}
+              <span className="block-weight">{blockData?.computeWeight}%</span>
+            </div>
+          ) : (
+            <span className="plus-sign">+</span>
+          )}
         </div>
-      ) : (
-        <span className="plus-sign">+</span>
-      )}
+      </div>
     </div>
   );
 }
+
+

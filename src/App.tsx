@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import rotateImg from './assets/rotate-phone.webp';
 import { getBlockById } from './data/blocks';
 import ChainDisplay from './components/ChainDisplay';
 import BlockPicker from './components/BlockPicker';
@@ -107,9 +108,37 @@ export default function App() {
     input.click();
   }, []);
 
+  // State for rotation reminder overlay (mobile only)
+  const [showRotateOverlay, setShowRotateOverlay] = useState<boolean>(false);
+
+  // Detect mobile portrait orientation
+  const updateOrientation = useCallback(() => {
+    const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+    const isMobile = window.innerWidth < 768; // heuristic for phones
+    // Show overlay only after intro dismissed and when in portrait on mobile
+    setShowRotateOverlay(!showIntro && isMobile && isPortrait);
+  }, [showIntro]);
+
+  useEffect(() => {
+    updateOrientation();
+    window.addEventListener('resize', updateOrientation);
+    window.addEventListener('orientationchange', updateOrientation);
+    return () => {
+      window.removeEventListener('resize', updateOrientation);
+      window.removeEventListener('orientationchange', updateOrientation);
+    };
+  }, [updateOrientation]);
+
   return (
     <div className="app">
       {showIntro && <PopupIntro onClose={() => setShowIntro(false)} />}
+      {/* Rotation reminder overlay – appears only on mobile portrait after intro */}
+{showRotateOverlay && (
+        <div className="rotate-overlay">
+          <img src={rotateImg} alt="Rotate phone" className="rotate-fullscreen" />
+          <div className="rotate-text">ROTATE YOUR PHONE</div>
+        </div>
+      )}
       <header className="header">
         <h1>Ampero II chain tool</h1>
         <div className="controls">
@@ -126,21 +155,21 @@ export default function App() {
         )}
         <div className={`sidebar ${pickerSlot !== null ? 'open' : ''}`}>
           {pickerSlot !== null ? (
-<BlockPicker
-               position={pickerSlot}
-               onSelect={handleSelectBlock}
-               onClose={() => setPickerSlot(null)}
-             />
+        <BlockPicker
+                 position={pickerSlot}
+                 onSelect={handleSelectBlock}
+                 onClose={() => setPickerSlot(null)}
+               />
           ) : null}
         </div>
         <div className="upper-half">
-<ChainDisplay
-              slots={slots}
-              onSlotClick={handleSlotClick}
-              onRemoveBlock={handleRemoveBlock}
-              totalWeight={totalComputeWeight}
-              onDrop={handleDrop}
-            />
+      <ChainDisplay
+                slots={slots}
+                onSlotClick={handleSlotClick}
+                onRemoveBlock={handleRemoveBlock}
+                totalWeight={totalComputeWeight}
+                onDrop={handleDrop}
+              />
         </div>
       </div>
     </div>
