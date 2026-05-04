@@ -109,7 +109,7 @@ export default function BlockPicker({ position, onSelect, onClose }: BlockPicker
                           onClick={() => handleSelect(effect.id)}
                           title={effect.description}
                         >
-                          <span className="effect-name">{effect.name}</span>
+                          <span className="effect-name">{effect.name} </span><span className="effect-weight" style={{color: getColorForCategory(effect.category)}}>{effect.computeWeight}%</span>
                         </div>
                       ))}
                     </div>
