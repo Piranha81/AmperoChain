@@ -71,35 +71,99 @@ function SlotBlock({ slot, position, onClick, onRemove, onDrop }: {
   const color = blockData ? getColorForCategory(blockData.category) : undefined;
   const icon = blockData ? getIconForCategory(blockData.category) : undefined;
 
-  // Refs for timers and drag state
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dragSource = useRef<number | null>(null);
-  const startPos = useRef<{ x: number; y: number } | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isDragging = useRef(false);
+  const dragSourcePos = useRef<number | null>(null);
+  const wasDragging = useRef(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (clickTimer.current) clearTimeout(clickTimer.current);
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
     };
   }, []);
 
-  // Global cleanup for pointerup/cancel (covers drags that leave the slot)
   useEffect(() => {
-    const endDrag = () => {
-      dragSource.current = null;
-      startPos.current = null;
+    const getSlotElementUnderPointer = (x: number, y: number): Element | null => {
+      return document.elementFromPoint(x, y)?.closest('[data-slot-position]') ?? null;
+    };
+
+    const getSlotUnderPointer = (x: number, y: number): number | null => {
+      const slotEl = getSlotElementUnderPointer(x, y);
+      if (!slotEl) return null;
+      const pos = slotEl.getAttribute('data-slot-position');
+      return pos ? parseInt(pos, 10) : null;
+    };
+
+    const cleanupDrag = () => {
+      isDragging.current = false;
+      dragSourcePos.current = null;
       wrapperRef.current?.classList.remove('dragging');
+      document.querySelectorAll('.drag-hover').forEach(el => el.classList.remove('drag-hover'));
+      setTimeout(() => { wasDragging.current = false; }, 100);
     };
-    window.addEventListener('pointerup', endDrag);
-    window.addEventListener('pointercancel', endDrag);
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      const target = getSlotUnderPointer(e.clientX, e.clientY);
+      if (dragSourcePos.current !== null && target !== null) {
+        onDrop(dragSourcePos.current, target);
+      }
+      cleanupDrag();
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDragging.current) return;
+      e.preventDefault();
+      document.querySelectorAll('.drag-hover').forEach(el => el.classList.remove('drag-hover'));
+      const slotEl = getSlotElementUnderPointer(e.clientX, e.clientY);
+      if (slotEl) slotEl.classList.add('drag-hover');
+    };
+
+    const onCancel = () => {
+      if (isDragging.current) {
+        isDragging.current = false;
+        cleanupDrag();
+      }
+    };
+
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onCancel);
+    window.addEventListener('pointermove', onPointerMove);
     return () => {
-      window.removeEventListener('pointerup', endDrag);
-      window.removeEventListener('pointercancel', endDrag);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onCancel);
+      window.removeEventListener('pointermove', onPointerMove);
     };
-  }, []);
+  }, [onDrop]);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (!slot) return;
+    if (e.button !== 0) return;
+    if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+      e.preventDefault();
+      longPressTimer.current = setTimeout(() => {
+        isDragging.current = true;
+        dragSourcePos.current = position;
+        wasDragging.current = true;
+        wrapperRef.current?.classList.add('dragging');
+        longPressTimer.current = null;
+      }, 300);
+    }
+  };
+
+  const handlePointerUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
 
   const handleClick = () => {
+    if (wasDragging.current) return;
     if (clickTimer.current) clearTimeout(clickTimer.current);
     clickTimer.current = setTimeout(() => {
       onClick(position);
@@ -115,64 +179,31 @@ function SlotBlock({ slot, position, onClick, onRemove, onDrop }: {
     if (slot) onRemove(position);
   };
 
-const handlePointerDown = (e: React.PointerEvent) => {
-          // Only prevent default for touch pointers to avoid canceling native mouse drag
-          if (e.pointerType === 'touch') {
-            e.preventDefault(); // stop native image drag / long‑press menu
-          }
-          if (e.button !== 0) return; // only primary button / touch
-          dragSource.current = position;
-          startPos.current = { x: e.clientX, y: e.clientY };
-          wrapperRef.current?.classList.add('dragging');
-        };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (dragSource.current === null) return;
-    // Only prevent scrolling if the pointer has actually moved a bit
-    const dx = e.clientX - (startPos.current?.x ?? 0);
-    const dy = e.clientY - (startPos.current?.y ?? 0);
-    if (Math.hypot(dx, dy) > 5) e.preventDefault();
-  };
-
-  const handlePointerUp = () => {
-    if (dragSource.current === null) return;
-    const target = position;
-    onDrop(dragSource.current, target);
-    dragSource.current = null;
-    startPos.current = null;
-    wrapperRef.current?.classList.remove('dragging');
-  };
-
   return (
-<div
-          className={`slot ${slot ? 'filled' : 'empty'}`}
-          draggable={!!slot} // desktop drag support
-          style={blockData ? { borderColor: color } : undefined}
-        onContextMenu={e => e.preventDefault()}
-        onDragStart={e => {
-          if (!slot) return; // only drag filled slots
-          e.dataTransfer.setData('text/plain', position.toString());
-        }}
-        onDragOver={e => e.preventDefault()}
-        onDrop={e => {
-          const source = parseInt(e.dataTransfer.getData('text/plain'), 10);
-          if (!isNaN(source)) onDrop(source, position);
-        }}
-        onDragEnd={e => {
-          (e.currentTarget as HTMLElement).style.opacity = '';
-        }}
+    <div
+      className={`slot ${slot ? 'filled' : 'empty'}`}
+      draggable={!!slot}
+      data-slot-position={position}
+      style={blockData ? { borderColor: color } : undefined}
+      onContextMenu={e => e.preventDefault()}
+      onDragStart={e => {
+        if (!slot) return;
+        e.dataTransfer.setData('text/plain', position.toString());
+      }}
+      onDragOver={e => e.preventDefault()}
+      onDrop={e => {
+        const source = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (!isNaN(source)) onDrop(source, position);
+      }}
+      onDragEnd={() => {}}
+    >
+      <div
+        ref={wrapperRef}
+        style={{ touchAction: 'none' }}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        className="mobile-drag-wrapper"
       >
-      {/* Mobile‑only wrapper handling pointer events */}
-<div
-          ref={wrapperRef}
-          style={{ touchAction: 'none' }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          className="mobile-drag-wrapper"
-        >
-        {/* Click / double‑click still work on the inner content */}
         <div onClick={handleClick} onDoubleClick={handleDoubleClick}>
           {slot && blockData ? (
             <div className="block-node-content">

@@ -312,6 +312,15 @@ body {
 
 .slot.empty:hover { border-color: var(--neon-cyan); transform: scale(1.05); }
 
+.slot.dragging { opacity: 0.4; transform: scale(0.9); }
+
+.slot.drag-hover {
+  border-color: var(--neon-cyan) !important;
+  box-shadow: 0 0 14px var(--neon-cyan), 0 0 30px var(--neon-cyan);
+  transform: scale(1.1);
+  z-index: 10;
+}
+
 /* ── Block node ─────────────────────────────────────────── */
 .plus-sign { font-size: 32px; color: #444; font-weight: 300; }
 

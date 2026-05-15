@@ -140,7 +140,7 @@ export default function App() {
         </div>
       )}
       <header className="header">
-        <h1>Ampero II chain tool</h1>
+        <h1>Ampero II chain tool</h1>
         <div className="controls">
           <button className="btn btn-clear" onClick={handleClearChain}>Clear Chain</button>
           <button className="btn" onClick={handleExport}>Export</button>
