@@ -196,6 +196,8 @@ function SlotBlock({ slot, position, onClick, onRemove, onDrop }: {
         if (!isNaN(source)) onDrop(source, position);
       }}
       onDragEnd={() => {}}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
     >
       <div
         ref={wrapperRef}
@@ -204,7 +206,7 @@ function SlotBlock({ slot, position, onClick, onRemove, onDrop }: {
         onPointerUp={handlePointerUp}
         className="mobile-drag-wrapper"
       >
-        <div onClick={handleClick} onDoubleClick={handleDoubleClick}>
+        <div>
           {slot && blockData ? (
             <div className="block-node-content">
               <span className="block-name" style={{ color }}>{blockData?.name}</span>
