@@ -431,6 +431,19 @@ body {
 .effect-item:hover { filter: brightness(1.4); border-left-width: 4px; }
 .effect-name { font-size: 12px; color: var(--text-primary); font-weight: 400; }
 
+.none-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px 7px 16px;
+  cursor: pointer;
+  border-left: 2px solid #444;
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.15s, border-left-width 0.15s;
+}
+.none-item:hover { background: rgba(255, 255, 255, 0.05); border-left-width: 4px; }
+.none-icon { font-size: 18px; color: #666; font-weight: bold; }
+
 /* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 768px) {
   .header { flex-direction: column; align-items: flex-start; }

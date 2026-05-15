@@ -5,8 +5,7 @@ import type { AudioBlock } from '../types/audio';
 
 interface BlockPickerProps {
   position: number;
-
-  onSelect: (blockId: string) => void;
+  onSelect: (blockId: string | null) => void;
   onClose: () => void;
 }
 
@@ -58,7 +57,7 @@ export default function BlockPicker({ position, onSelect, onClose }: BlockPicker
     setExpandedSub(prev => prev === sub ? null : sub);
   };
 
-  const handleSelect = (blockId: string) => {
+  const handleSelect = (blockId: string | null) => {
     onSelect(blockId);
     setExpandedCategory(null);
     setExpandedSub(null);
@@ -71,6 +70,10 @@ export default function BlockPicker({ position, onSelect, onClose }: BlockPicker
         <button className="btn btn-close" onClick={onClose}>×</button>
       </div>
       <div className="picker-content">
+        <div className="none-item" onClick={() => handleSelect(null)}>
+          <span className="none-icon">✕</span>
+          <span className="effect-name">NONE</span>
+        </div>
         {grouped.map(cat => (
           <div key={cat.category} className="category-section">
             <div

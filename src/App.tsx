@@ -30,7 +30,7 @@ export default function App() {
     setPickerSlot(position);
   }, []);
 
-  const handleSelectBlock = useCallback((blockId: string) => {
+  const handleSelectBlock = useCallback((blockId: string | null) => {
     if (pickerSlot === null) return;
     setSlots(prev => {
       const updated = [...prev];
